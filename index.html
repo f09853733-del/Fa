@@ -1,0 +1,86 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080808">
+  <title>خانه نفرین‌شده | The Cursed House</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="fog fog-one"></div>
+  <div class="fog fog-two"></div>
+
+  <header class="topbar">
+    <a href="#" class="logo">☠ THE CURSED HOUSE</a>
+    <button id="soundBtn" class="sound-btn">🔇 صدا خاموش</button>
+  </header>
+
+  <main>
+    <section id="intro" class="intro">
+      <p class="eyebrow">یک داستان تعاملی از وحشت</p>
+      <h1>خانه <span>نفرین‌شده</span></h1>
+      <p class="intro-text">
+        سال‌هاست کسی از این خانه بیرون نیامده...
+        امشب، تو تصمیم گرفته‌ای وارد آن شوی.
+      </p>
+      <button id="startBtn" class="primary-btn">
+        ورود به خانه
+      </button>
+      <p class="warning">⚠ چراغ‌ها را خاموش کن... اگر جرأت داری.</p>
+    </section>
+
+    <section id="game" class="game hidden">
+      <div class="status-bar">
+        <div>🔑 کلید: <span id="keyStatus">نداری</span></div>
+        <div>📍 مکان: <span id="location">ورودی خانه</span></div>
+      </div>
+
+      <div class="scene" id="scene">
+        <div class="moon"></div>
+        <div class="house-icon" id="houseIcon">🏚️</div>
+        <div class="scene-label" id="sceneLabel">ورودی خانه</div>
+      </div>
+
+      <article class="story">
+        <p class="story-tag">پرونده شماره ۰۱۳</p>
+        <h2 id="storyTitle">دروازه تاریکی</h2>
+        <p id="storyText">
+          دروازه پشت سرت با صدای بلندی بسته می‌شود.
+          صدای قدم‌هایی از طبقه بالا می‌شنوی...
+        </p>
+        <p id="message" class="message" aria-live="polite"></p>
+      </article>
+
+      <section class="rooms">
+        <h3>کجا می‌خواهی بروی؟</h3>
+        <div class="room-grid">
+          <button class="room-btn" data-room="hall">🕯️ سالن اصلی</button>
+          <button class="room-btn" data-room="kitchen">🍽️ آشپزخانه</button>
+          <button class="room-btn" data-room="bedroom">🛏️ اتاق خواب</button>
+          <button class="room-btn" data-room="basement">🪦 زیرزمین قفل‌شده</button>
+          <button class="room-btn" data-room="mirror">🪞 اتاق آینه‌ها</button>
+          <button class="room-btn" data-room="exit">🚪 در خروجی</button>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button id="searchBtn" class="action-btn">🔍 جست‌وجوی اتاق</button>
+        <button id="restartBtn" class="action-btn">↻ شروع دوباره</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>THE CURSED HOUSE — هیچ‌چیز آن‌طور که به نظر می‌رسد نیست.</p>
+  </footer>
+
+  <div id="jumpscare" class="jumpscare hidden" aria-hidden="true">
+    <div class="scare-face">☠</div>
+    <p>پشت سرت را نگاه نکن...</p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
