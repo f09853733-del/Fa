@@ -4,83 +4,100 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#080808">
-  <title>خانه نفرین‌شده | The Cursed House</title>
+  <meta name="theme-color" content="#0b0b12">
+  <title>VIBE PLAYER | موزیک پلیر</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="fog fog-one"></div>
-  <div class="fog fog-two"></div>
+  <div class="app">
+    <aside class="sidebar">
+      <a href="#" class="brand">VIBE<span>.</span></a>
+      <p class="side-label">منوی اصلی</p>
+      <a class="side-link active" href="#home">⌂ <span>خانه</span></a>
+      <a class="side-link" href="#library">♫ <span>کتابخانه موسیقی</span></a>
+      <button class="side-link" id="favoritesFilter">♡ <span>علاقه‌مندی‌ها</span></button>
 
-  <header class="topbar">
-    <a href="#" class="logo">☠ THE CURSED HOUSE</a>
-    <button id="soundBtn" class="sound-btn">🔇 صدا خاموش</button>
-  </header>
-
-  <main>
-    <section id="intro" class="intro">
-      <p class="eyebrow">یک داستان تعاملی از وحشت</p>
-      <h1>خانه <span>نفرین‌شده</span></h1>
-      <p class="intro-text">
-        سال‌هاست کسی از این خانه بیرون نیامده...
-        امشب، تو تصمیم گرفته‌ای وارد آن شوی.
-      </p>
-      <button id="startBtn" class="primary-btn">
-        ورود به خانه
-      </button>
-      <p class="warning">⚠ چراغ‌ها را خاموش کن... اگر جرأت داری.</p>
-    </section>
-
-    <section id="game" class="game hidden">
-      <div class="status-bar">
-        <div>🔑 کلید: <span id="keyStatus">نداری</span></div>
-        <div>📍 مکان: <span id="location">ورودی خانه</span></div>
+      <div class="sidebar-bottom">
+        <div class="mini-orb">♫</div>
+        <p>موسیقی، حال خوب، تکرار.</p>
+        <span>YOUR PERSONAL MUSIC SPACE</span>
       </div>
+    </aside>
 
-      <div class="scene" id="scene">
-        <div class="moon"></div>
-        <div class="house-icon" id="houseIcon">🏚️</div>
-        <div class="scene-label" id="sceneLabel">ورودی خانه</div>
-      </div>
+    <main id="home">
+      <header class="topbar">
+        <div class="search">
+          <span>⌕</span>
+          <input id="searchInput" type="search" placeholder="اسم آهنگ یا هنرمند..." aria-label="جست‌وجوی آهنگ">
+        </div>
+        <div class="profile"><span class="profile-dot"></span> فضای موسیقی من</div>
+      </header>
 
-      <article class="story">
-        <p class="story-tag">پرونده شماره ۰۱۳</p>
-        <h2 id="storyTitle">دروازه تاریکی</h2>
-        <p id="storyText">
-          دروازه پشت سرت با صدای بلندی بسته می‌شود.
-          صدای قدم‌هایی از طبقه بالا می‌شنوی...
-        </p>
-        <p id="message" class="message" aria-live="polite"></p>
-      </article>
-
-      <section class="rooms">
-        <h3>کجا می‌خواهی بروی؟</h3>
-        <div class="room-grid">
-          <button class="room-btn" data-room="hall">🕯️ سالن اصلی</button>
-          <button class="room-btn" data-room="kitchen">🍽️ آشپزخانه</button>
-          <button class="room-btn" data-room="bedroom">🛏️ اتاق خواب</button>
-          <button class="room-btn" data-room="basement">🪦 زیرزمین قفل‌شده</button>
-          <button class="room-btn" data-room="mirror">🪞 اتاق آینه‌ها</button>
-          <button class="room-btn" data-room="exit">🚪 در خروجی</button>
+      <section class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow">✦ SOUND OF YOUR WORLD</span>
+          <h1>ریتم خودتو<br><span>پیدا کن.</span></h1>
+          <p>یک پلی‌لیست، هزار حس متفاوت. دنیای موسیقی تو از اینجا شروع می‌شه.</p>
+          <button class="primary-btn" id="heroPlay">▶ پخش موسیقی</button>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="art-glow"></div>
+          <div class="vinyl">
+            <div class="vinyl-center">V<span>.</span></div>
+          </div>
+          <div class="floating-note note-one">♫</div>
+          <div class="floating-note note-two">♪</div>
         </div>
       </section>
 
-      <div class="actions">
-        <button id="searchBtn" class="action-btn">🔍 جست‌وجوی اتاق</button>
-        <button id="restartBtn" class="action-btn">↻ شروع دوباره</button>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <p>THE CURSED HOUSE — هیچ‌چیز آن‌طور که به نظر می‌رسد نیست.</p>
-  </footer>
-
-  <div id="jumpscare" class="jumpscare hidden" aria-hidden="true">
-    <div class="scare-face">☠</div>
-    <p>پشت سرت را نگاه نکن...</p>
+      <section class="library" id="library">
+        <div class="section-heading">
+          <div>
+            <span class="section-label">YOUR COLLECTION</span>
+            <h2 id="listTitle">آهنگ‌های منتخب</h2>
+          </div>
+          <span class="track-total" id="trackTotal">۰ آهنگ</span>
+        </div>
+        <div class="track-list" id="trackList"></div>
+        <p class="empty-state" id="emptyState" hidden>آهنگی پیدا نشد؛ عبارت دیگری رو جست‌وجو کن.</p>
+      </section>
+    </main>
   </div>
 
+  <footer class="player">
+    <div class="now-playing">
+      <div class="cover small-cover" id="currentCover">♫</div>
+      <div class="track-meta">
+        <strong id="currentTitle">یک آهنگ انتخاب کن</strong>
+        <span id="currentArtist">VIBE PLAYER</span>
+      </div>
+      <button class="icon-btn favorite-btn" id="favoriteCurrent" aria-label="افزودن به علاقه‌مندی‌ها">♡</button>
+    </div>
+
+    <div class="player-center">
+      <div class="controls">
+        <button class="icon-btn" id="shuffleBtn" aria-label="پخش تصادفی" title="پخش تصادفی">⤨</button>
+        <button class="icon-btn" id="prevBtn" aria-label="آهنگ قبلی">◀|</button>
+        <button class="play-btn" id="playBtn" aria-label="پخش">▶</button>
+        <button class="icon-btn" id="nextBtn" aria-label="آهنگ بعدی">|▶</button>
+        <button class="icon-btn" id="repeatBtn" aria-label="تکرار" title="تکرار آهنگ">↻</button>
+      </div>
+      <div class="progress-row">
+        <span id="currentTime">0:00</span>
+        <input id="progress" type="range" min="0" max="100" value="0" aria-label="موقعیت آهنگ">
+        <span id="duration">0:00</span>
+      </div>
+    </div>
+
+    <div class="volume-area">
+      <span>♫</span>
+      <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" aria-label="تنظیم صدا">
+    </div>
+  </footer>
+
+  <audio id="audio" preload="metadata"></audio>
   <script src="script.js"></script>
 </body>
 </html>
