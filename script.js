@@ -1,268 +1,406 @@
-const intro = document.getElementById("intro");
-const game = document.getElementById("game");
-const startBtn = document.getElementById("startBtn");
-const searchBtn = document.getElementById("searchBtn");
-const restartBtn = document.getElementById("restartBtn");
-const soundBtn = document.getElementById("soundBtn");
 
-const storyTitle = document.getElementById("storyTitle");
-const storyText = document.getElementById("storyText");
-const message = document.getElementById("message");
-const locationText = document.getElementById("location");
-const keyStatus = document.getElementById("keyStatus");
-const sceneLabel = document.getElementById("sceneLabel");
-const houseIcon = document.getElementById("houseIcon");
-const jumpscare = document.getElementById("jumpscare");
 
-let hasKey = false;
-let visited = new Set();
-let basementCleared = false;
-let mirrorScareUsed = false;
-let soundOn = false;
-let audioContext = null;
-let scareTimer = null;
-
-const rooms = {
-  hall: {
-    name: "سالن اصلی",
-    icon: "🕯️",
-    title: "صدای قدم‌ها",
-    text: "سالن پر از گردوغبار است. یک تابلو روی دیوار آویزان است. قسم می‌خوری که چشمان فرد داخل تابلو حرکت کرد..."
+const tracks = [
+  {
+    title: "Dreamscape",
+    artist: "Cosmic Waves",
+    file: "music/track1.mp3",
+    cover: "linear-gradient(135deg, #7458db, #e99bdf)",
+    symbol: "☾"
   },
-  kitchen: {
-    name: "آشپزخانه",
-    icon: "🔪",
-    title: "چیزی زیر میز است",
-    text: "بوی عجیبی در فضا پیچیده. زیر میز یک کلید زنگ‌زده پیدا می‌کنی. ناگهان یکی در گوشَت زمزمه می‌کند: «نباید پیدایش می‌کردی...»"
+  {
+    title: "Midnight Drive",
+    artist: "Neon Nights",
+    file: "music/track2.mp3",
+    cover: "linear-gradient(135deg, #132e65, #53b7df)",
+    symbol: "✦"
   },
-  bedroom: {
-    name: "اتاق خواب",
-    icon: "🛏️",
-    title: "آخرین یادداشت",
-    text: "روی تخت یک دفتر قدیمی افتاده. آخرین جمله آن نوشته: «هیچ‌وقت در آینه نگاه نکن، وقتی ساعت سه می‌شود.»"
+  {
+    title: "Lost in Space",
+    artist: "Nova",
+    file: "music/track3.mp3",
+    cover: "linear-gradient(135deg, #a14d83, #ffb278)",
+    symbol: "✧"
   },
-  basement: {
-    name: "زیرزمین",
-    icon: "🪦",
-    title: "راز خانه",
-    text: "در را باز می‌کنی. روی دیوارها نشانه‌های عجیبی حک شده‌اند. وسط اتاق یک جعبه سیاه قرار دارد. روی آن نوشته شده: این خانه به یک روح تعلق دارد..."
+  {
+    title: "Ocean of Stars",
+    artist: "Luna",
+    file: "music/track4.mp3",
+    cover: "linear-gradient(135deg, #125b68, #71d8c0)",
+    symbol: "♬"
   },
-  mirror: {
-    name: "اتاق آینه‌ها",
-    icon: "🪞",
-    title: "تصویر اشتباه",
-    text: "وارد اتاقی پر از آینه می‌شوی. تصویرت حرکت می‌کند، اما نه هم‌زمان با تو. انگار کسی از آن طرف شیشه نگاهت می‌کند..."
+  {
+    title: "Afterglow",
+    artist: "Echo",
+    file: "music/track5.mp3",
+    cover: "linear-gradient(135deg, #b36b45, #f4d18a)",
+    symbol: "☼"
   }
-};
+];
 
-function showMessage(text) {
-  message.textContent = text;
+const audio = document.getElementById("audio");
+const trackList = document.getElementById("trackList");
+const searchInput = document.getElementById("searchInput");
+const progress = document.getElementById("progress");
+const playBtn = document.getElementById("playBtn");
+const favoriteCurrent = document.getElementById("favoriteCurrent");
+const shuffleBtn = document.getElementById("shuffleBtn");
+const repeatBtn = document.getElementById("repeatBtn");
+
+let currentIndex = 0;
+let isShuffle = false;
+let repeatCurrent = false;
+let favoritesOnly = false;
+let favorites = loadFavorites();
+let visibleTracks = tracks.map((_, index) => index);
+
+function loadFavorites() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("vibe-favorites") || "[]");
+    return Array.isArray(saved)
+      ? saved.filter(index =>
+          Number.isInteger(index) && index >= 0 && index < tracks.length
+        )
+      : [];
+  } catch {
+    return [];
+  }
 }
 
-function updateStatus(roomName) {
-  locationText.textContent = roomName;
-  keyStatus.textContent = hasKey ? "داری 🔑" : "نداری";
+function saveFavorites() {
+  try {
+    localStorage.setItem("vibe-favorites", JSON.stringify(favorites));
+  } catch {
+    // اگر ذخیره‌سازی مرورگر در دسترس نباشد، پلیر همچنان کار می‌کند.
+  }
 }
 
-function enterGame() {
-  intro.classList.add("hidden");
-  game.classList.remove("hidden");
-  showMessage("برای کشف راز خانه، اتاق‌ها را بررسی کن.");
-  playTone(100, 0.4);
+function formatTime(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${String(secs).padStart(2, "0")}`;
 }
 
-function enterRoom(room) {
-  if (room === "exit") {
-    if (!basementCleared) {
-      storyTitle.textContent = "هنوز تمام نشده...";
-      storyText.textContent =
-        "در خروجی تکان نمی‌خورد. صدایی از تاریکی می‌گوید: «هنوز راز خانه را کشف نکرده‌ای...»";
-      showMessage("ابتدا باید راز زیرزمین را پیدا کنی.");
-      scare();
-      return;
+function renderTracks() {
+  const query = searchInput.value.trim().toLowerCase();
+
+  visibleTracks = tracks
+    .map((track, index) => ({ track, index }))
+    .filter(({ track, index }) => {
+      const matchesQuery =
+        `${track.title} ${track.artist}`.toLowerCase().includes(query);
+      const matchesFavorite =
+        !favoritesOnly || favorites.includes(index);
+      return matchesQuery && matchesFavorite;
+    })
+    .map(({ index }) => index);
+
+  trackList.replaceChildren();
+
+  visibleTracks.forEach((index, position) => {
+    const track = tracks[index];
+
+    const row = document.createElement("div");
+    row.className = "track";
+    row.dataset.index = index;
+
+    const number = document.createElement("span");
+    number.className = "track-number";
+    number.textContent = String(position + 1).padStart(2, "0");
+
+    const cover = document.createElement("div");
+    cover.className = "cover track-cover";
+    cover.style.background = track.cover;
+    cover.textContent = track.symbol;
+    cover.setAttribute("aria-hidden", "true");
+
+    const info = document.createElement("button");
+    info.className = "track-info";
+    info.type = "button";
+    info.style.border = "0";
+    info.style.background = "transparent";
+    info.style.color = "inherit";
+    info.style.textAlign = "right";
+    info.innerHTML = `<strong></strong><span></span>`;
+    info.querySelector("strong").textContent = track.title;
+    info.querySelector("span").textContent = track.artist;
+    info.addEventListener("click", () => playTrack(index));
+
+    const duration = document.createElement("span");
+    duration.className = "track-duration";
+    duration.textContent =
+      index === currentIndex && Number.isFinite(audio.duration)
+        ? formatTime(audio.duration)
+        : "♫";
+
+    const play = document.createElement("button");
+    play.className = "track-play";
+    play.type = "button";
+    play.textContent =
+      index === currentIndex && !audio.paused ? "Ⅱ" : "▶";
+    play.setAttribute("aria-label", `پخش ${track.title}`);
+    play.addEventListener("click", () => {
+      if (index === currentIndex && !audio.paused) {
+        pauseAudio();
+      } else {
+        playTrack(index);
+      }
+    });
+
+    const heart = document.createElement("button");
+    heart.className = "heart" +
+      (favorites.includes(index) ? " liked" : "");
+    heart.type = "button";
+    heart.textContent = favorites.includes(index) ? "♥" : "♡";
+    heart.setAttribute("aria-label", "تغییر علاقه‌مندی");
+    heart.addEventListener("click", () => toggleFavorite(index));
+
+    row.append(number, cover, info, duration, play, heart);
+    trackList.appendChild(row);
+  });
+
+  document.getElementById("trackTotal").textContent =
+    `${visibleTracks.length} آهنگ`;
+
+  document.getElementById("emptyState").hidden =
+    visibleTracks.length !== 0;
+
+  document.getElementById("listTitle").textContent =
+    favoritesOnly ? "آهنگ‌های موردعلاقه" : "آهنگ‌های منتخب";
+
+  updateTrackHighlight();
+}
+
+function updateTrackHighlight() {
+  document.querySelectorAll(".track").forEach(row => {
+    const active = Number(row.dataset.index) === currentIndex;
+    const playing = active && !audio.paused;
+
+    row.classList.toggle("playing", active);
+    const button = row.querySelector(".track-play");
+
+    if (button) {
+      button.textContent = playing ? "Ⅱ" : "▶";
+      button.setAttribute(
+        "aria-label",
+        playing ? "توقف موقت" : "پخش آهنگ"
+      );
     }
-
-    storyTitle.textContent = "پایان؟";
-    storyText.textContent =
-      "در باز می‌شود و از خانه خارج می‌شوی. هوای سرد شب را نفس می‌کشی. اما وقتی به پنجره خانه نگاه می‌کنی، سایه‌ای پشت سرت ایستاده است...";
-    showMessage("پایان اول: خانه هنوز تو را رها نکرده است.");
-    houseIcon.textContent = "🌑";
-    sceneLabel.textContent = "بیرون خانه";
-    return;
-  }
-
-  if (!rooms[room]) return;
-
-  if (room === "basement" && !hasKey) {
-    storyTitle.textContent = "در قفل است";
-    storyText.textContent =
-      "دستگیره را می‌چرخانی، اما در باز نمی‌شود. از پشت در صدای خراشیدن ناخن روی چوب می‌آید...";
-    showMessage("🔒 برای ورود به زیرزمین باید کلید پیدا کنی.");
-    playTone(65, 0.6);
-    return;
-  }
-
-  const data = rooms[room];
-
-  storyTitle.textContent = data.title;
-  storyText.textContent = data.text;
-  sceneLabel.textContent = data.name;
-  houseIcon.textContent = data.icon;
-
-  visited.add(room);
-  updateStatus(data.name);
-  showMessage("");
-
-  if (room === "kitchen" && !hasKey) {
-    hasKey = true;
-    updateStatus(data.name);
-    showMessage("🔑 یک کلید زنگ‌زده پیدا کردی!");
-    playTone(440, 0.2);
-  }
-
-  if (room === "basement") {
-    basementCleared = true;
-    showMessage("📜 راز خانه را کشف کردی! حالا می‌توانی به سمت خروجی بروی.");
-  }
-
-  if (room === "mirror" && !mirrorScareUsed) {
-    mirrorScareUsed = true;
-    if (Math.random() < 0.75) {
-      scare();
-    } else {
-      showMessage("آینه برای لحظه‌ای سیاه می‌شود... بعد دوباره تصویرت را نشان می‌دهد.");
-    }
-  } else if (Math.random() < 0.22) {
-    scare();
-  }
-
-  if (soundOn) playTone(75, 0.3);
+  });
 }
 
-function searchRoom() {
-  if (visited.size === 0) {
-    showMessage("اول وارد یکی از اتاق‌ها شو.");
-    return;
-  }
+function updateCurrentTrack() {
+  const track = tracks[currentIndex];
 
-  if (!hasKey && visited.has("kitchen")) {
-    hasKey = true;
-    updateStatus(locationText.textContent);
-    showMessage("🔑 کلیدی زیر یک تکه چوب شکسته پیدا کردی!");
-    playTone(440, 0.2);
-    return;
-  }
+  document.getElementById("currentTitle").textContent = track.title;
+  document.getElementById("currentArtist").textContent = track.artist;
 
-  const events = [
-    "صدای قدم‌ها نزدیک‌تر می‌شود...",
-    "یک سایه از گوشه چشمَت عبور می‌کند.",
-    "چراغ برای لحظه‌ای خاموش می‌شود.",
-    "روی دیوار نوشته شده: «من هنوز اینجا هستم.»",
-    "صدای خنده‌ای از طبقه بالا شنیده می‌شود...",
-    "هوای اتاق ناگهان یخ می‌زند."
-  ];
+  const cover = document.getElementById("currentCover");
+  cover.style.background = track.cover;
+  cover.textContent = track.symbol;
 
-  showMessage(events[Math.floor(Math.random() * events.length)]);
+  favoriteCurrent.classList.toggle(
+    "liked",
+    favorites.includes(currentIndex)
+  );
+  favoriteCurrent.textContent =
+    favorites.includes(currentIndex) ? "♥" : "♡";
 
-  if (Math.random() < 0.3) scare();
-  else if (soundOn) playTone(90, 0.4);
+  document.getElementById("currentTime").textContent = "0:00";
+  document.getElementById("duration").textContent = "0:00";
+  progress.value = 0;
 }
 
-function scare() {
-  if (jumpscare.classList.contains("hidden")) {
-    jumpscare.classList.remove("hidden");
-    jumpscare.setAttribute("aria-hidden", "false");
-    document.body.classList.add("shake");
+async function playTrack(index) {
+  currentIndex = index;
+  audio.pause();
+  audio.src = tracks[index].file;
+  audio.load();
 
-    if (soundOn) playTone(45, 0.8);
-
-    clearTimeout(scareTimer);
-    scareTimer = setTimeout(() => {
-      jumpscare.classList.add("hidden");
-      jumpscare.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("shake");
-    }, 1000);
-  }
-}
-
-function playTone(frequency, duration) {
-  if (!soundOn) return;
+  updateCurrentTrack();
+  renderTracks();
 
   try {
-    audioContext ??= new (window.AudioContext || window.webkitAudioContext)();
-
-    if (audioContext.state === "suspended") {
-      audioContext.resume();
-    }
-
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-
-    oscillator.type = "sawtooth";
-    oscillator.frequency.setValueAtTime(
-      frequency,
-      audioContext.currentTime
-    );
-
-    gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(
-      0.12,
-      audioContext.currentTime + 0.03
-    );
-    gain.gain.exponentialRampToValueAtTime(
-      0.0001,
-      audioContext.currentTime + duration
-    );
-
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
-
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + duration);
+    await audio.play();
   } catch (error) {
-    console.warn("پخش صدا در این مرورگر پشتیبانی نمی‌شود.");
+    if (error.name === "NotAllowedError") {
+      document.getElementById("currentArtist").textContent =
+        "برای پخش، دوباره روی Play بزن";
+    } else if (error.name !== "AbortError") {
+      document.getElementById("currentArtist").textContent =
+        "فایل پیدا نشد؛ پوشه music را بررسی کن";
+    }
+  }
+
+  updatePlayButton();
+}
+
+function pauseAudio() {
+  audio.pause();
+  updatePlayButton();
+}
+
+function updatePlayButton() {
+  const playing = !audio.paused;
+  playBtn.textContent = playing ? "Ⅱ" : "▶";
+  playBtn.setAttribute(
+    "aria-label",
+    playing ? "توقف موقت" : "پخش"
+  );
+  updateTrackHighlight();
+}
+
+function nextTrack() {
+  if (isShuffle && tracks.length > 1) {
+    let next = currentIndex;
+    while (next === currentIndex) {
+      next = Math.floor(Math.random() * tracks.length);
+    }
+    playTrack(next);
+  } else {
+    playTrack((currentIndex + 1) % tracks.length);
   }
 }
 
-function restartGame() {
-  clearTimeout(scareTimer);
-
-  hasKey = false;
-  visited = new Set();
-  basementCleared = false;
-  mirrorScareUsed = false;
-
-  jumpscare.classList.add("hidden");
-  jumpscare.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("shake");
-
-  game.classList.add("hidden");
-  intro.classList.remove("hidden");
-
-  storyTitle.textContent = "دروازه تاریکی";
-  storyText.textContent =
-    "دروازه پشت سرت با صدای بلندی بسته می‌شود. صدای قدم‌هایی از طبقه بالا می‌شنوی...";
-
-  houseIcon.textContent = "🏚️";
-  sceneLabel.textContent = "ورودی خانه";
-  updateStatus("ورودی خانه");
-  showMessage("");
+function previousTrack() {
+  if (audio.currentTime > 3) {
+    audio.currentTime = 0;
+    return;
+  }
+  playTrack((currentIndex - 1 + tracks.length) % tracks.length);
 }
 
-startBtn.addEventListener("click", enterGame);
+function toggleFavorite(index) {
+  if (favorites.includes(index)) {
+    favorites = favorites.filter(item => item !== index);
+  } else {
+    favorites.push(index);
+  }
 
-document.querySelectorAll(".room-btn").forEach(button => {
-  button.addEventListener("click", () => {
-    enterRoom(button.dataset.room);
-  });
+  saveFavorites();
+  renderTracks();
+  updateCurrentFavorite();
+}
+
+function updateCurrentFavorite() {
+  const liked = favorites.includes(currentIndex);
+  favoriteCurrent.classList.toggle("liked", liked);
+  favoriteCurrent.textContent = liked ? "♥" : "♡";
+}
+
+playBtn.addEventListener("click", async () => {
+  if (audio.paused) {
+    if (!audio.src) {
+      await playTrack(currentIndex);
+    } else {
+      try {
+        await audio.play();
+      } catch {
+        document.getElementById("currentArtist").textContent =
+          "پخش نشد؛ فایل موسیقی را بررسی کن";
+      }
+    }
+  } else {
+    pauseAudio();
+  }
+  updatePlayButton();
 });
 
-searchBtn.addEventListener("click", searchRoom);
-restartBtn.addEventListener("click", restartGame);
+document.getElementById("prevBtn").addEventListener("click", previousTrack);
+document.getElementById("nextBtn").addEventListener("click", nextTrack);
 
-soundBtn.addEventListener("click", () => {
-  soundOn = !soundOn;
-  soundBtn.textContent = soundOn ? "🔊 صدا روشن" : "🔇 صدا خاموش";
-
-  if (soundOn) playTone(110, 0.25);
+document.getElementById("heroPlay").addEventListener("click", async () => {
+  if (!audio.src) {
+    await playTrack(currentIndex);
+  } else if (audio.paused) {
+    try {
+      await audio.play();
+    } catch {
+      document.getElementById("currentArtist").textContent =
+        "فایل موسیقی را بررسی کن";
+    }
+  } else {
+    pauseAudio();
+  }
+  updatePlayButton();
 });
+
+favoriteCurrent.addEventListener("click", () => {
+  toggleFavorite(currentIndex);
+});
+
+shuffleBtn.addEventListener("click", () => {
+  isShuffle = !isShuffle;
+  shuffleBtn.classList.toggle("active", isShuffle);
+  shuffleBtn.setAttribute("aria-pressed", String(isShuffle));
+});
+
+repeatBtn.addEventListener("click", () => {
+  repeatCurrent = !repeatCurrent;
+  audio.loop = repeatCurrent;
+  repeatBtn.classList.toggle("active", repeatCurrent);
+  repeatBtn.setAttribute("aria-pressed", String(repeatCurrent));
+  repeatBtn.title = repeatCurrent ? "تکرار همین آهنگ فعال است" : "تکرار خاموش";
+});
+
+searchInput.addEventListener("input", renderTracks);
+
+document.getElementById("favoritesFilter").addEventListener("click", () => {
+  favoritesOnly = !favoritesOnly;
+  document.getElementById("favoritesFilter").classList.toggle(
+    "active",
+    favoritesOnly
+  );
+  renderTracks();
+});
+
+document.getElementById("volume").addEventListener("input", event => {
+  audio.volume = Number(event.target.value);
+});
+
+progress.addEventListener("input", () => {
+  if (Number.isFinite(audio.duration) && audio.duration > 0) {
+    audio.currentTime = (Number(progress.value) / 100) * audio.duration;
+  }
+});
+
+audio.addEventListener("timeupdate", () => {
+  if (!Number.isFinite(audio.duration) || audio.duration <= 0) return;
+
+  progress.value = (audio.currentTime / audio.duration) * 100;
+  document.getElementById("currentTime").textContent =
+    formatTime(audio.currentTime);
+  document.getElementById("duration").textContent =
+    formatTime(audio.duration);
+});
+
+audio.addEventListener("loadedmetadata", () => {
+  document.getElementById("duration").textContent =
+    formatTime(audio.duration);
+});
+
+audio.addEventListener("play", () => {
+  updatePlayButton();
+  renderTracks();
+});
+
+audio.addEventListener("pause", () => {
+  updatePlayButton();
+  renderTracks();
+});
+
+audio.addEventListener("ended", () => {
+  if (!repeatCurrent) nextTrack();
+});
+
+audio.addEventListener("error", () => {
+  if (audio.src) {
+    document.getElementById("currentArtist").textContent =
+      "خطا در بارگذاری؛ مسیر فایل را بررسی کن";
+  }
+});
+
+audio.volume = 0.7;
+updateCurrentTrack();
+renderTracks();
